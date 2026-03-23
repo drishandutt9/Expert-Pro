@@ -5,6 +5,8 @@ import { embedMany, generateText } from 'ai';
 import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters';
 const pdfParse = require('pdf-parse');
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: Request) {
   try {
     const formData = await req.formData();
