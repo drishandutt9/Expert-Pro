@@ -13,6 +13,28 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
     }
 
+    // Deduplication Check: Prevent ingestion rot by checking if file already exists
+    try {
+      const { data: existingDocs, error: checkError } = await supabaseAdmin
+        .from('documents_v2')
+        .select('id')
+        .contains('metadata', { fileName: file.name })
+        .limit(1);
+
+      if (checkError) throw checkError;
+
+      if (existingDocs && existingDocs.length > 0) {
+         console.warn(`[Upload] Deduplication blocked ingestion of: ${file.name}`);
+         return NextResponse.json(
+           { error: `You have already uploaded this document before.` }, 
+           { status: 409 }
+         );
+      }
+    } catch (checkErr) {
+      console.error('[Upload] Database deduplication check failed prematurely:', checkErr);
+      // Fallback allows processing to continue if the DB temporarily fails to read the JSONB metadata
+    }
+
     const buffer = Buffer.from(await file.arrayBuffer());
     let text = '';
 

@@ -36,7 +36,10 @@ export default function UploadPage() {
         if (res.ok) {
           successCount++;
         } else {
-          console.error(`Failed to upload ${file.name}`);
+          const errData = await res.json().catch(() => ({ error: 'Unknown server error' }));
+          console.error(`Failed to upload ${file.name}:`, errData.error);
+          // Throw explicitly so the UI surfaces the exact backend rejection cause automatically
+          throw new Error(errData.error || `Server responded with status ${res.status}`);
         }
       }
       
@@ -44,7 +47,8 @@ export default function UploadPage() {
         setStatus('success');
         setMessage(`Successfully processed and vectorized ${successCount} file(s)!`);
         setFiles([]); // clear queue on success
-      } else {
+      } else if (successCount === 0 && files.length > 0) {
+         // It might have thrown, but if it didn't, fallback:
          setStatus('error');
          setMessage('Failed to process any files.');
       }
