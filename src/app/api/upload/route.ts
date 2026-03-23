@@ -3,6 +3,12 @@ import { supabaseAdmin } from '@/lib/supabase';
 import { openai } from '@ai-sdk/openai';
 import { embedMany, generateText } from 'ai';
 import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters';
+
+// Hardware Failsafe: Polyfill graphics renderer core memory
+if (typeof global !== 'undefined' && typeof global.DOMMatrix === 'undefined') {
+  (global as any).DOMMatrix = Array;
+}
+
 const pdfParse = require('pdf-parse');
 
 export const dynamic = 'force-dynamic';

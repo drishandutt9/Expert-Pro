@@ -36,10 +36,15 @@ export default function UploadPage() {
         if (res.ok) {
           successCount++;
         } else {
-          const errData = await res.json().catch(() => ({ error: 'Unknown server error' }));
-          console.error(`Failed to upload ${file.name}:`, errData.error);
-          // Throw explicitly so the UI surfaces the exact backend rejection cause automatically
-          throw new Error(errData.error || `Server responded with status ${res.status}`);
+          const contentType = res.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            const errData = await res.json().catch(() => ({ error: `Server error ${res.status}` }));
+            throw new Error(errData.error || `Server responded with status ${res.status}`);
+          } else {
+            const statusText = await res.text();
+            console.error("Vercel Network Intercept:", statusText.substring(0, 200));
+            throw new Error(`Vercel System Failure ${res.status}: ${res.status === 504 ? 'Execution Timeout Exceeded' : 'Server Memory Collision'}`);
+          }
         }
       }
       
