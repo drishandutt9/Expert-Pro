@@ -4,6 +4,8 @@
 import { useChat } from '@ai-sdk/react';
 import { Send, Bot, User, Loader2, Trash2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 export default function ChatClient() {
   const [sessionId, setSessionId] = useState(() => crypto.randomUUID());
@@ -106,15 +108,33 @@ export default function ChatClient() {
                 </div>
               )}
               <div 
-                className={`max-w-[80%] rounded-2xl px-5 py-3 ${
+                className={`max-w-[85%] rounded-2xl px-5 py-4 ${
                   m.role === 'user' 
                     ? 'bg-indigo-500 text-white rounded-tr-sm' 
-                    : 'bg-white/10 text-gray-100 rounded-tl-sm border border-white/5 whitespace-pre-wrap flex flex-col gap-2'
+                    : 'bg-white/10 text-gray-100 rounded-tl-sm border border-white/5 flex flex-col gap-2 shadow-xl'
                 }`}
               >
-                <div className="text-sm">
-                  {m.content || (m.parts && m.parts.map((p: any) => p.text).join('')) || m.display || (
-                    !m.toolInvocations && <span className="opacity-50 italic">Generating response...</span>
+                <div className="text-sm overflow-x-auto w-full">
+                  {m.content ? (
+                    <ReactMarkdown 
+                      remarkPlugins={[remarkGfm]}
+                      components={{
+                        table: ({node, ...props}: any) => <div className="overflow-x-auto my-4 w-full scrollbar-thin scrollbar-thumb-white/20"><table className="w-full text-sm text-left divide-y divide-white/10 border border-white/10 rounded-xl overflow-hidden shadow-sm" {...props} /></div>,
+                        thead: ({node, ...props}: any) => <thead className="bg-white/5 text-indigo-300 text-xs uppercase" {...props} />,
+                        th: ({node, ...props}: any) => <th className="px-4 py-3 font-medium tracking-wider border-b border-white/10" {...props} />,
+                        tbody: ({node, ...props}: any) => <tbody className="divide-y divide-white/5 bg-transparent" {...props} />,
+                        td: ({node, ...props}: any) => <td className="px-4 py-3 whitespace-nowrap text-gray-200" {...props} />,
+                        p: ({node, ...props}: any) => <p className="mb-3 leading-relaxed last:mb-0" {...props} />,
+                        ul: ({node, ...props}: any) => <ul className="list-disc pl-5 mb-3 space-y-1" {...props} />,
+                        strong: ({node, ...props}: any) => <strong className="font-semibold text-white" {...props} />
+                      }}
+                    >
+                      {m.content as string}
+                    </ReactMarkdown>
+                  ) : (
+                    (m.parts && m.parts.map((p: any) => p.text).join('')) || m.display || (
+                      !m.toolInvocations && <span className="opacity-50 italic animate-pulse">Analyzing...</span>
+                    )
                   )}
                   {m.toolInvocations && m.toolInvocations.map((ti: any) => (
                     <div key={ti.toolCallId} className="mt-3 bg-black/30 shadow-inner border border-white/5 p-3 rounded-xl text-xs font-mono">

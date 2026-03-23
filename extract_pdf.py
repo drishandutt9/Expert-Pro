@@ -1,5 +1,5 @@
 import sys
-from pypdf import PdfReader
+import pymupdf4llm
 
 def main():
     if len(sys.argv) < 2:
@@ -9,17 +9,11 @@ def main():
     pdf_path = sys.argv[1]
     
     try:
-        reader = PdfReader(pdf_path)
-        text = ""
-        for page in reader.pages:
-            extracted = page.extract_text()
-            if extracted:
-                text += extracted + "\n"
-        
-        # Print the extracted text to stdout so Node can capture it
-        print(text)
+        # Extract lossless markdown seamlessly spanning text, lists, and full data tables
+        md_text = pymupdf4llm.to_markdown(pdf_path)
+        print(md_text)
     except Exception as e:
-        print(f"Error parsing PDF: {str(e)}", file=sys.stderr)
+        print(f"Error parsing PDF with PyMuPDF4LLM: {str(e)}", file=sys.stderr)
         sys.exit(1)
 
 if __name__ == "__main__":
