@@ -39,24 +39,16 @@ export async function POST(req: Request) {
     let text = '';
 
     if (file.type === 'application/pdf') {
-      const { writeFileSync, unlinkSync } = require('fs');
-      const { execSync } = require('child_process');
-      const path = require('path');
-      const crypto = require('crypto');
-      
-      const tempFilePath = path.join(process.cwd(), `temp_${crypto.randomUUID()}.pdf`);
-      writeFileSync(tempFilePath, buffer);
-      
       try {
-        text = execSync(`python extract_pdf.py "${tempFilePath}"`, { 
-            encoding: 'utf-8', 
-            maxBuffer: 1024 * 1024 * 50 // 50MB buffer to handle large PDFs
-        });
+        // Vercel Serverless execution environments possess a Read-Only file system (EROFS) 
+        // and physically lack the binaries required to execute python scripts natively.
+        // As a highly robust resolution, we ingest the PDF strictly into Node's volatile RAM.
+        const pdfParse = require('pdf-parse');
+        const data = await pdfParse(buffer);
+        text = data.text;
       } catch (err: any) {
-        console.error("Python PDF extraction failed:", err.stderr || err.message);
-        return NextResponse.json({ error: 'Failed to extract text using robust Python parser.' }, { status: 500 });
-      } finally {
-        try { unlinkSync(tempFilePath); } catch (e) {}
+        console.error("Native Node.js Serverless PDF extraction failed:", err);
+        return NextResponse.json({ error: 'Failed to safely process PDF in Vercel RAM.' }, { status: 500 });
       }
     } else if (file.type === 'text/plain') {
       text = buffer.toString('utf-8');
