@@ -47,7 +47,9 @@ export async function POST(req: Request) {
         // and physically lack the binaries required to execute python scripts natively.
         // As a highly robust resolution, we ingest the PDF strictly into Node's volatile RAM.
         // By statically importing pdfParse at the top, we bypass Vercel's aggressive tree-shaking module drops.
-        const data = await pdfParse(buffer);
+        // Secure ESM interoperability for Vercel Webpack namespace wrapping
+        const pdfParserFn = pdfParse.default || pdfParse;
+        const data = await pdfParserFn(buffer);
         text = data.text;
       } catch (err: any) {
         console.error("Native Node.js Serverless PDF extraction failed:", err);
