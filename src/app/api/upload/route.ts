@@ -3,6 +3,7 @@ import { supabaseAdmin } from '@/lib/supabase';
 import { openai } from '@ai-sdk/openai';
 import { embedMany, generateText } from 'ai';
 import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters';
+const pdfParse = require('pdf-parse');
 
 export async function POST(req: Request) {
   try {
@@ -43,7 +44,7 @@ export async function POST(req: Request) {
         // Vercel Serverless execution environments possess a Read-Only file system (EROFS) 
         // and physically lack the binaries required to execute python scripts natively.
         // As a highly robust resolution, we ingest the PDF strictly into Node's volatile RAM.
-        const pdfParse = require('pdf-parse');
+        // By statically importing pdfParse at the top, we bypass Vercel's aggressive tree-shaking module drops.
         const data = await pdfParse(buffer);
         text = data.text;
       } catch (err: any) {
