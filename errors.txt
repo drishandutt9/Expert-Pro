@@ -1,0 +1,7 @@
+﻿src/app/api/chat/route.ts(61,19): error TS2551: Property 'toDataStreamResponse' does not exist on type 'StreamTextResult<ToolSet, Output<string, string, never>>'. Did you mean 'toTextStreamResponse'?
+src/app/api/upload/route.ts(5,48): error TS2307: Cannot find module 'langchain/text_splitter' or its corresponding type declarations.
+src/app/api/upload/route.ts(6,8): error TS1192: Module '"C:/Users/drish/AntiGravity Prep/rag-agent-app/node_modules/pdf-parse/dist/pdf-parse/esm/index"' has no default export.
+src/app/api/upload/route.ts(48,33): error TS7006: Parameter 'chunk' implicitly has an 'any' type.
+src/app/api/upload/route.ts(48,40): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/app/chat/page.tsx(3,25): error TS2307: Cannot find module 'ai/react' or its corresponding type declarations.
+src/app/chat/page.tsx(25,24): error TS7006: Parameter 'm' implicitly has an 'any' type.

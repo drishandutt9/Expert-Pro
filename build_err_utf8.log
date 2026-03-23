@@ -1,0 +1,85 @@
+﻿node.exe : ΓÜá 
+Warning: Next.js 
+inferred your 
+workspace root, but 
+it may not be correct.
+At C:\Program Files\no
+dejs\npx.ps1:29 char:3
++   & $NODE_EXE 
+$NPX_CLI_JS $args
++   ~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~
+    + CategoryInfo    
+          : NotSpeci  
+  fied: (ΓÜá Warnin   
+ g: Ne...not be co    
+rrect.:String) []    
+, RemoteException
+    + FullyQualifiedE 
+   rrorId : NativeCo  
+  mmandError
+ 
+ We detected multiple 
+lockfiles and 
+selected the 
+directory of C:\Users\
+drish\package-lock.jso
+n as the root 
+directory.
+ To silence this 
+warning, set 
+`turbopack.root` in 
+your Next.js config, 
+or consider removing 
+one of the lockfiles 
+if it's not needed.
+   See https://nextjs.
+org/docs/app/api-refer
+ence/config/next-confi
+g-js/turbopack#root-di
+rectory for more 
+information.
+ Detected additional 
+lockfiles: 
+   * C:\Users\drish\An
+tiGravity Prep\rag-age
+nt-app\package-lock.js
+on
+
+Γû▓ Next.js 16.2.1 (Turbopack)
+- Environments: .env.local
+
+  Creating an optimized production build ...
+Γ£ô Compiled successfully in 2.3s
+  Running TypeScript ...
+  Finished TypeScript in 1988ms ...
+  Collecting page data using 9 workers ...
+  Generating static pages using 9 workers (0/8) ...
+  Generating static pages using 9 workers (2/8) 
+Error occurred 
+prerendering page 
+"/chat". Read more: ht
+tps://nextjs.org/docs/
+messages/prerender-err
+or
+TypeError: Cannot 
+read properties of 
+undefined (reading 
+'trim')
+    at <unknown> (C:\U
+sers\drish\AntiGravity
+ Prep\rag-agent-app\.n
+ext\server\chunks\ssr\
+AntiGravity Prep_rag-a
+gent-app_0zzf8bi._.js:
+65:85378) {
+  digest: '3032160339'
+}
+Export encountered an 
+error on /chat/page: 
+/chat, exiting the 
+build.
+Γ¿» Next.js build 
+worker exited with 
+code: 1 and signal: 
+null

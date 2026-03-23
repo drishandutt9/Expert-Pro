@@ -1,0 +1,119 @@
+import { NextResponse } from 'next/server';
+import { supabaseAdmin } from '@/lib/supabase';
+import { openai } from '@ai-sdk/openai';
+import { embedMany, generateText } from 'ai';
+import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters';
+
+export async function POST(req: Request) {
+  try {
+    const formData = await req.formData();
+    const file = formData.get('file') as File;
+
+    if (!file) {
+      return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
+    }
+
+    const buffer = Buffer.from(await file.arrayBuffer());
+    let text = '';
+
+    if (file.type === 'application/pdf') {
+      const { writeFileSync, unlinkSync } = require('fs');
+      const { execSync } = require('child_process');
+      const path = require('path');
+      const crypto = require('crypto');
+      
+      const tempFilePath = path.join(process.cwd(), `temp_${crypto.randomUUID()}.pdf`);
+      writeFileSync(tempFilePath, buffer);
+      
+      try {
+        text = execSync(`python extract_pdf.py "${tempFilePath}"`, { 
+            encoding: 'utf-8', 
+            maxBuffer: 1024 * 1024 * 50 // 50MB buffer to handle large PDFs
+        });
+      } catch (err: any) {
+        console.error("Python PDF extraction failed:", err.stderr || err.message);
+        return NextResponse.json({ error: 'Failed to extract text using robust Python parser.' }, { status: 500 });
+      } finally {
+        try { unlinkSync(tempFilePath); } catch (e) {}
+      }
+    } else if (file.type === 'text/plain') {
+      text = buffer.toString('utf-8');
+    } else {
+      return NextResponse.json({ error: 'Unsupported file type. Please upload a PDF or TXT file.' }, { status: 400 });
+    }
+
+    if (!text.trim()) {
+      return NextResponse.json({ error: 'Failed to extract text from the file.' }, { status: 400 });
+    }
+
+    // Split the text into massive Parent chunks
+    const parentSplitter = new RecursiveCharacterTextSplitter({
+      chunkSize: 2000,
+      chunkOverlap: 400,
+    });
+    const parentChunks = await parentSplitter.splitText(text);
+
+    // Split Parents into precise Child chunks
+    const childSplitter = new RecursiveCharacterTextSplitter({
+      chunkSize: 400,
+      chunkOverlap: 50,
+    });
+
+    const allChildRecords: { content: string, parentContext: string }[] = [];
+    for (const parent of parentChunks) {
+      const children = await childSplitter.splitText(parent);
+      for (const child of children) {
+        allChildRecords.push({ content: child, parentContext: parent });
+      }
+    }
+
+    const childContents = allChildRecords.map(r => r.content);
+
+    // Get embeddings ONLY for all tiny child chunks
+    const { embeddings } = await embedMany({
+      model: openai.embedding('text-embedding-3-small'),
+      values: childContents,
+    });
+
+    // Generate a file summary before splitting
+    let fileSummary = 'Summarization unavailable.';
+    try {
+      const { text: rawSummary } = await generateText({
+        model: openai('gpt-4o-mini'),
+        system: 'You are an expert file summarizer. Read the following document text and provide a concise, maximum 1-2 sentence summary outlining what this file is about.',
+        prompt: text.substring(0, 20000), // Feed first 20k characters to stay within context
+      });
+      fileSummary = rawSummary;
+    } catch (e) {
+      console.warn("Failed to generate summary. Skipping.", e);
+    }
+
+    // Insert the child chunks, but inject the Massive Parent text into metadata!
+    const records = allChildRecords.map((record, i: number) => ({
+      content: record.content,
+      embedding: embeddings[i],
+      metadata: {
+        fileName: file.name,
+        fileType: file.type,
+        fileSummary: fileSummary,
+        parentContext: record.parentContext
+      }
+    }));
+
+    // Insert into Supabase
+    const { error } = await supabaseAdmin
+      .from('documents_v2')
+      .insert(records);
+
+    if (error) {
+      console.error('Supabase Error:', error);
+      return NextResponse.json({ error: 'Failed to insert vectors into Supabase' }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true, message: `Successfully processed and vectorized ${childContents.length} chunks.` });
+
+  } catch (error: any) {
+    console.error('Upload Error:', error);
+    return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
+  }
+}
